@@ -566,6 +566,10 @@ function generatePDFForSchedule(month, year) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape', 'mm', 'a4');
 
+    // Separar serviços: Domingo Manhã vs outros cultos
+    const morningServices = schedule.services.filter(s => s.type.includes('Manhã'));
+    const regularServices = schedule.services.filter(s => !s.type.includes('Manhã'));
+
     // Header
     doc.setFillColor(30, 64, 175);
     doc.rect(0, 0, 297, 30, 'F');
@@ -582,27 +586,17 @@ function generatePDFForSchedule(month, year) {
     doc.setFontSize(10);
     doc.text(`Escala de Porteiros e Auxiliares da Porta - ${MONTH_NAMES[month]} ${year}`, 148.5, 27, { align: 'center' });
 
-    // Table
-    const tableData = schedule.services.map(service => [
-        service.date,
-        service.type,
-        service.porteiroPrincipal || '-',
-        service.porteiroLateral || '-',
-        service.auxiliarPrincipal || '-',
-        service.auxiliarLateral || '-'
-    ]);
+    // Configuração comum das tabelas
+    const tableHeaders = [[
+        'Data',
+        'Culto',
+        'Porteiro Principal',
+        'Porteiro Lateral',
+        'Auxiliar Principal',
+        'Auxiliar Lateral'
+    ]];
 
-    doc.autoTable({
-        startY: 35,
-        head: [[
-            'Data',
-            'Culto',
-            'Porteiro Principal',
-            'Porteiro Lateral',
-            'Auxiliar Principal',
-            'Auxiliar Lateral'
-        ]],
-        body: tableData,
+    const commonTableConfig = {
         theme: 'grid',
         headStyles: {
             fillColor: [30, 64, 175],
@@ -615,9 +609,6 @@ function generatePDFForSchedule(month, year) {
             fontSize: 8,
             halign: 'center'
         },
-        alternateRowStyles: {
-            fillColor: [248, 250, 252]
-        },
         columnStyles: {
             0: { cellWidth: 35 },
             1: { cellWidth: 50 },
@@ -626,8 +617,62 @@ function generatePDFForSchedule(month, year) {
             4: { cellWidth: 45 },
             5: { cellWidth: 45 }
         },
-        margin: { left: 15, right: 15 }
-    });
+        margin: { left: 15, right: 15 },
+        // Hook para colorir colunas de auxiliares em rosa
+        didParseCell: function(data) {
+            // Colunas 4 e 5 = Auxiliar Principal e Auxiliar Lateral
+            if (data.section === 'body' && (data.column.index === 4 || data.column.index === 5)) {
+                data.cell.styles.fillColor = [255, 182, 193]; // Rosa claro
+            }
+        }
+    };
+
+    // TABELA 1: Cultos Regulares (Quarta Noite + Domingo Noite)
+    if (regularServices.length > 0) {
+        const regularTableData = regularServices.map(service => [
+            service.date,
+            service.type,
+            service.porteiroPrincipal || '-',
+            service.porteiroLateral || '-',
+            service.auxiliarPrincipal || '-',
+            service.auxiliarLateral || '-'
+        ]);
+
+        doc.autoTable({
+            ...commonTableConfig,
+            startY: 35,
+            head: tableHeaders,
+            body: regularTableData
+        });
+    }
+
+    // TABELA 2: Cultos de Domingo Manhã (Jovens/Crianças) - Separada
+    if (morningServices.length > 0) {
+        const morningTableData = morningServices.map(service => [
+            service.date,
+            service.type,
+            service.porteiroPrincipal || '-',
+            service.porteiroLateral || '-',
+            service.auxiliarPrincipal || '-',
+            service.auxiliarLateral || '-'
+        ]);
+
+        // Posição Y após a primeira tabela
+        let startYMorning = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 35;
+
+        // Subtítulo para tabela de Domingo Manhã
+        doc.setTextColor(30, 64, 175);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('📌 Cultos de Domingo - Manhã (Jovens/Crianças)', 15, startYMorning);
+
+        doc.autoTable({
+            ...commonTableConfig,
+            startY: startYMorning + 5,
+            head: tableHeaders,
+            body: morningTableData
+        });
+    }
 
     // Footer
     const pageHeight = doc.internal.pageSize.height;
