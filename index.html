@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala CCB - Porteiros e Auxiliares</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p id="loading-text">Carregando...</p>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <span class="login-icon">⛪</span>
+                <h1>Escala CCB</h1>
+                <p>Congregação Cristã no Brasil</p>
+                <p class="login-subtitle">Ituiutaba-MG | Novo Tempo II</p>
+            </div>
+
+            <div class="login-tabs">
+                <button class="login-tab active" onclick="showLoginForm('login')">Entrar</button>
+                <button class="login-tab" onclick="showLoginForm('register')">Criar Conta</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" placeholder="Sua senha" required minlength="6">
+                </div>
+                <p id="login-error" class="error-message" style="display: none;"></p>
+                <button type="submit" class="btn-primary btn-full">
+                    🔐 Entrar
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="login-form" style="display: none;" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Senha</label>
+                    <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required
+                        minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm">Confirmar Senha</label>
+                    <input type="password" id="register-confirm" placeholder="Repita a senha" required minlength="6">
+                </div>
+                <p id="register-error" class="error-message" style="display: none;"></p>
+                <button type="submit" class="btn-primary btn-full">
+                    ✨ Criar Conta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app-container" class="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">⛪</span>
+                    <div class="logo-text">
+                        <h1>Escala CCB</h1>
+                        <p>Congregação Cristã no Brasil</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="church-info">
+                        <span>Ituiutaba-MG | Novo Tempo II</span>
+                    </div>
+                    <button class="btn-logout" onclick="handleLogout()">
+                        🚪 Sair
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="dashboard">
+                <span class="tab-icon">🏠</span>
+                <span>Início</span>
+            </button>
+            <button class="tab-btn" data-tab="membros">
+                <span class="tab-icon">👥</span>
+                <span>Membros</span>
+            </button>
+            <button class="tab-btn" data-tab="escalas">
+                <span class="tab-icon">📅</span>
+                <span>Escalas</span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Tab -->
+            <section id="dashboard" class="tab-content active">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👔</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-porteiros">0</span>
+                            <span class="stat-label">Porteiros</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👗</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-auxiliares">0</span>
+                            <span class="stat-label">Auxiliares</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📋</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-escalas">0</span>
+                            <span class="stat-label">Escalas Salvas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <h2>Ações Rápidas</h2>
+                    <div class="actions-grid">
+                        <button class="action-btn" onclick="switchTab('membros')">
+                            <span class="action-icon">➕</span>
+                            <span>Cadastrar Membro</span>
+                        </button>
+                        <button class="action-btn" onclick="switchTab('escalas')">
+                            <span class="action-icon">📅</span>
+                            <span>Nova Escala</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="next-services">
+                    <h2>Próximos Cultos</h2>
+                    <div class="services-list" id="next-services-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Membros Tab -->
+            <section id="membros" class="tab-content">
+                <div class="section-header">
+                    <h2>Cadastro de Membros</h2>
+                </div>
+
+                <!-- Add Member Form -->
+                <div class="form-card">
+                    <h3>Adicionar Novo Membro</h3>
+                    <form id="member-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="member-name">Nome do Membro</label>
+                                <input type="text" id="member-name" placeholder="Digite o nome completo" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="member-type">Função</label>
+                                <select id="member-type" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="porteiro">Porteiro (Irmão)</option>
+                                    <option value="auxiliar">Auxiliar da Porta (Irmã)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">
+                                <span>➕</span> Adicionar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Members Lists -->
+                <div class="members-grid">
+                    <div class="members-card">
+                        <h3>👔 Porteiros (Irmãos)</h3>
+                        <ul class="members-list" id="porteiros-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                        <p class="empty-message" id="porteiros-empty">Nenhum porteiro cadastrado</p>
+                    </div>
+                    <div class="members-card">
+                        <h3>👗 Auxiliares da Porta (Irmãs)</h3>
+                        <ul class="members-list" id="auxiliares-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                        <p class="empty-message" id="auxiliares-empty">Nenhuma auxiliar cadastrada</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Escalas Tab -->
+            <section id="escalas" class="tab-content">
+                <div class="section-header">
+                    <h2>Gerar Escala</h2>
+                </div>
+
+                <!-- Month/Year Selector -->
+                <div class="form-card">
+                    <h3>Selecionar Período</h3>
+                    <div class="period-selector">
+                        <div class="form-group">
+                            <label for="month-select">Mês</label>
+                            <select id="month-select">
+                                <option value="0">Janeiro</option>
+                                <option value="1">Fevereiro</option>
+                                <option value="2">Março</option>
+                                <option value="3">Abril</option>
+                                <option value="4">Maio</option>
+                                <option value="5">Junho</option>
+                                <option value="6">Julho</option>
+                                <option value="7">Agosto</option>
+                                <option value="8">Setembro</option>
+                                <option value="9">Outubro</option>
+                                <option value="10">Novembro</option>
+                                <option value="11">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="year-select">Ano</label>
+                            <select id="year-select">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="generateScheduleForm()">
+                            <span>📅</span> Gerar Calendário
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Schedule Form -->
+                <div class="schedule-form-container" id="schedule-form-container" style="display: none;">
+                    <div class="form-card">
+                        <div class="schedule-header">
+                            <h3 id="schedule-title">Escala de Janeiro 2025</h3>
+                            <div class="schedule-actions">
+                                <button class="btn-secondary" onclick="saveSchedule()">
+                                    <span>💾</span> Salvar
+                                </button>
+                                <button class="btn-primary" onclick="generatePDF()">
+                                    <span>📄</span> Gerar PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="schedule-table-container">
+                            <table class="schedule-table" id="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Culto</th>
+                                        <th>Porteiro Principal</th>
+                                        <th>Porteiro Lateral</th>
+                                        <th>Auxiliar Principal</th>
+                                        <th>Auxiliar Lateral</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schedule-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Schedules -->
+                <div class="saved-schedules">
+                    <h3>Escalas Salvas</h3>
+                    <div class="schedules-list" id="saved-schedules-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <p class="empty-message" id="schedules-empty">Nenhuma escala salva</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Escala CCB © 2025 - Feito com ❤️ para a obra de Deus</p>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
