@@ -619,7 +619,7 @@ function generatePDFForSchedule(month, year) {
         },
         margin: { left: 15, right: 15 },
         // Hook para colorir colunas de auxiliares em rosa
-        didParseCell: function(data) {
+        didParseCell: function (data) {
             // Colunas 4 e 5 = Auxiliar Principal e Auxiliar Lateral
             if (data.section === 'body' && (data.column.index === 4 || data.column.index === 5)) {
                 data.cell.styles.fillColor = [255, 182, 193]; // Rosa claro
@@ -664,7 +664,7 @@ function generatePDFForSchedule(month, year) {
         doc.setTextColor(30, 64, 175);
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('📌 Cultos de Domingo - Manhã (Jovens/Crianças)', 15, startYMorning);
+        doc.text('Cultos de Domingo - Manhã (Jovens/Crianças)', 15, startYMorning);
 
         doc.autoTable({
             ...commonTableConfig,
