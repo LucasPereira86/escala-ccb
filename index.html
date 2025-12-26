@@ -28,11 +28,6 @@
                 <p class="login-subtitle">Ituiutaba-MG | Novo Tempo II</p>
             </div>
 
-            <div class="login-tabs">
-                <button class="login-tab active" onclick="showLoginForm('login')">Entrar</button>
-                <button class="login-tab" onclick="showLoginForm('register')">Criar Conta</button>
-            </div>
-
             <!-- Login Form -->
             <form id="login-form" class="login-form" onsubmit="handleLogin(event)">
                 <div class="form-group">
@@ -46,27 +41,6 @@
                 <p id="login-error" class="error-message" style="display: none;"></p>
                 <button type="submit" class="btn-primary btn-full">
                     🔐 Entrar
-                </button>
-            </form>
-
-            <!-- Register Form -->
-            <form id="register-form" class="login-form" style="display: none;" onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email" placeholder="seu@email.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Senha</label>
-                    <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required
-                        minlength="6">
-                </div>
-                <div class="form-group">
-                    <label for="register-confirm">Confirmar Senha</label>
-                    <input type="password" id="register-confirm" placeholder="Repita a senha" required minlength="6">
-                </div>
-                <p id="register-error" class="error-message" style="display: none;"></p>
-                <button type="submit" class="btn-primary btn-full">
-                    ✨ Criar Conta
                 </button>
             </form>
         </div>
