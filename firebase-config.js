@@ -138,12 +138,12 @@ async function saveMembersToDb(members) {
 // Load members from database
 async function loadMembersFromDb() {
     const path = getDataPath();
-    if (!path) return { porteiros: [], auxiliares: [] };
+    if (!path) return { porteiros: [], auxiliares: [], som: [] };
 
     try {
         const snapshot = await database.ref(`${path}/members`).once('value');
         const data = snapshot.val();
-        return data || { porteiros: [], auxiliares: [] };
+        return data || { porteiros: [], auxiliares: [], som: [] };
     } catch (error) {
         console.error('Erro ao carregar membros:', error);
         return { porteiros: [], auxiliares: [] };
@@ -175,6 +175,35 @@ async function loadSchedulesFromDb() {
         return data || [];
     } catch (error) {
         console.error('Erro ao carregar escalas:', error);
+        return [];
+    }
+}
+
+// Save SOM schedules to database
+async function saveSomSchedulesToDb(schedules) {
+    const path = getDataPath();
+    if (!path) return false;
+
+    try {
+        await database.ref(`${path}/som_schedules`).set(schedules);
+        return true;
+    } catch (error) {
+        console.error('Erro ao salvar escalas de som:', error);
+        return false;
+    }
+}
+
+// Load SOM schedules from database
+async function loadSomSchedulesFromDb() {
+    const path = getDataPath();
+    if (!path) return [];
+
+    try {
+        const snapshot = await database.ref(`${path}/som_schedules`).once('value');
+        const data = snapshot.val();
+        return data || [];
+    } catch (error) {
+        console.error('Erro ao carregar escalas de som:', error);
         return [];
     }
 }
@@ -225,6 +254,8 @@ window.saveMembersToDb = saveMembersToDb;
 window.loadMembersFromDb = loadMembersFromDb;
 window.saveSchedulesToDb = saveSchedulesToDb;
 window.loadSchedulesFromDb = loadSchedulesFromDb;
+window.saveSomSchedulesToDb = saveSomSchedulesToDb;
+window.loadSomSchedulesFromDb = loadSomSchedulesFromDb;
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 window.showError = showError;

@@ -103,6 +103,10 @@ async function initApp() {
     setupYearSelector();
     setCurrentMonthYear();
 
+    // Setup Som tab
+    setupSomYearSelector();
+    setSomCurrentMonthYear();
+
     // Load data from Firebase
     await loadDataFromFirebase();
 
@@ -116,8 +120,10 @@ async function loadDataFromFirebase() {
     try {
         membersCache = await loadMembersFromDb();
         schedulesCache = await loadSchedulesFromDb();
+        somSchedulesCache = await loadSomSchedulesFromDb();
         loadMembers();
         loadSchedules();
+        loadSomSchedules();
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
     }
@@ -428,7 +434,6 @@ function generateScheduleForm() {
             <td>${createMemberSelect('porteiro-lateral', serviceId, members.porteiros, savedData?.porteiroLateral)}</td>
             <td>${createMemberSelect('auxiliar-principal', serviceId, members.auxiliares, savedData?.auxiliarPrincipal)}</td>
             <td>${createMemberSelect('auxiliar-lateral', serviceId, members.auxiliares, savedData?.auxiliarLateral)}</td>
-            <td>${createMemberSelect('operador-som', serviceId, members.som || [], savedData?.operadorSom)}</td>
         `;
 
         tbody.appendChild(row);
@@ -479,8 +484,7 @@ async function saveSchedule() {
             porteiroPrincipal: document.getElementById(`porteiro-principal-${serviceId}`)?.value || '',
             porteiroLateral: document.getElementById(`porteiro-lateral-${serviceId}`)?.value || '',
             auxiliarPrincipal: document.getElementById(`auxiliar-principal-${serviceId}`)?.value || '',
-            auxiliarLateral: document.getElementById(`auxiliar-lateral-${serviceId}`)?.value || '',
-            operadorSom: document.getElementById(`operador-som-${serviceId}`)?.value || ''
+            auxiliarLateral: document.getElementById(`auxiliar-lateral-${serviceId}`)?.value || ''
         });
     });
 
@@ -1018,6 +1022,357 @@ function updateNextServices() {
 }
 
 // ========================================
+// SOM SCHEDULE MANAGEMENT
+// ========================================
+
+let somSchedulesCache = [];
+
+function getSomSchedules() {
+    return somSchedulesCache;
+}
+
+async function saveSomSchedulesData(schedules) {
+    somSchedulesCache = schedules;
+    await saveSomSchedulesToDb(schedules);
+}
+
+function setupSomYearSelector() {
+    const yearSelect = document.getElementById('som-year-select');
+    if (!yearSelect) return;
+
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear; year <= currentYear + 2; year++) {
+        yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+    }
+}
+
+function setSomCurrentMonthYear() {
+    const now = new Date();
+    const monthSelect = document.getElementById('som-month-select');
+    const yearSelect = document.getElementById('som-year-select');
+
+    if (monthSelect) monthSelect.value = now.getMonth();
+    if (yearSelect) yearSelect.value = now.getFullYear();
+}
+
+function generateSomScheduleForm() {
+    const month = parseInt(document.getElementById('som-month-select').value);
+    const year = parseInt(document.getElementById('som-year-select').value);
+
+    const members = getMembers();
+    const somMembers = members.som || [];
+
+    if (somMembers.length < 1) {
+        alert('É necessário ter pelo menos 1 operador de som cadastrado para gerar a escala.');
+        return;
+    }
+
+    const services = getServiceDays(month, year);
+
+    // Update title
+    document.getElementById('som-schedule-title').textContent = `Escala de Som - ${MONTH_NAMES[month]} ${year}`;
+
+    // Generate table rows
+    const tbody = document.getElementById('som-schedule-body');
+    tbody.innerHTML = '';
+
+    // Check if there's a saved schedule for this month
+    const schedules = getSomSchedules();
+    const existingSchedule = schedules.find(s => s.month === month && s.year === year);
+
+    services.forEach((service, index) => {
+        const dateStr = formatDate(service.date);
+        const serviceId = `som-${year}-${month}-${index}`;
+
+        // Get saved values if exist
+        let savedData = null;
+        if (existingSchedule) {
+            savedData = existingSchedule.services.find(s => s.serviceId === serviceId);
+        }
+
+        const row = document.createElement('tr');
+        row.className = service.cssClass;
+        row.innerHTML = `
+            <td class="date-cell">${dateStr}</td>
+            <td class="culto-cell">${service.type}</td>
+            <td>${createMemberSelect('som-operador', serviceId, somMembers, savedData?.operadorSom)}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+
+    // Show the form
+    document.getElementById('som-schedule-form-container').style.display = 'block';
+}
+
+async function saveSomSchedule() {
+    const month = parseInt(document.getElementById('som-month-select').value);
+    const year = parseInt(document.getElementById('som-year-select').value);
+
+    showLoading('Salvando escala de som...');
+
+    const rows = document.querySelectorAll('#som-schedule-body tr');
+    const servicesData = [];
+
+    rows.forEach((row, index) => {
+        const serviceId = `som-${year}-${month}-${index}`;
+        const dateCell = row.querySelector('.date-cell').textContent;
+        const cultoCell = row.querySelector('.culto-cell').textContent;
+
+        servicesData.push({
+            serviceId: serviceId,
+            date: dateCell,
+            type: cultoCell,
+            operadorSom: document.getElementById(`som-operador-${serviceId}`)?.value || ''
+        });
+    });
+
+    const schedules = getSomSchedules();
+
+    // Remove existing schedule for this month if any
+    const existingIndex = schedules.findIndex(s => s.month === month && s.year === year);
+    if (existingIndex !== -1) {
+        schedules.splice(existingIndex, 1);
+    }
+
+    // Add new schedule
+    schedules.push({
+        id: Date.now(),
+        month: month,
+        year: year,
+        monthName: MONTH_NAMES[month],
+        services: servicesData,
+        createdAt: new Date().toISOString()
+    });
+
+    await saveSomSchedulesData(schedules);
+    loadSomSchedules();
+
+    hideLoading();
+    alert('Escala de som salva com sucesso!');
+}
+
+function loadSomSchedules() {
+    const schedules = getSomSchedules();
+    const list = document.getElementById('saved-som-schedules-list');
+    const empty = document.getElementById('som-schedules-empty');
+
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (schedules.length === 0) {
+        empty.style.display = 'block';
+    } else {
+        empty.style.display = 'none';
+
+        // Sort by year and month descending
+        schedules.sort((a, b) => {
+            if (a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+        });
+
+        schedules.forEach(schedule => {
+            list.innerHTML += `
+                <div class="schedule-item">
+                    <div class="schedule-item-info">
+                        <span class="schedule-item-icon">🎤</span>
+                        <span class="schedule-item-name">${schedule.monthName} ${schedule.year}</span>
+                    </div>
+                    <div class="schedule-item-actions">
+                        <button class="btn-secondary" onclick="loadSavedSomSchedule(${schedule.month}, ${schedule.year})">
+                            📝 Editar
+                        </button>
+                        <button class="btn-primary" onclick="generateSomPDFForSchedule(${schedule.month}, ${schedule.year})">
+                            📄 PDF
+                        </button>
+                        <button class="btn-danger" onclick="deleteSomSchedule(${schedule.id})">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+function loadSavedSomSchedule(month, year) {
+    document.getElementById('som-month-select').value = month;
+    document.getElementById('som-year-select').value = year;
+    generateSomScheduleForm();
+}
+
+async function deleteSomSchedule(id) {
+    if (!confirm('Tem certeza que deseja excluir esta escala de som?')) {
+        return;
+    }
+
+    showLoading('Excluindo...');
+
+    let schedules = getSomSchedules();
+    schedules = schedules.filter(s => s.id !== id);
+    await saveSomSchedulesData(schedules);
+    loadSomSchedules();
+
+    hideLoading();
+}
+
+function generateSomPDF() {
+    const month = parseInt(document.getElementById('som-month-select').value);
+    const year = parseInt(document.getElementById('som-year-select').value);
+    generateSomPDFForSchedule(month, year);
+}
+
+function generateSomPDFForSchedule(month, year) {
+    const schedules = getSomSchedules();
+    const schedule = schedules.find(s => s.month === month && s.year === year);
+
+    if (!schedule) {
+        saveSomSchedule();
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+
+    // Separar serviços: Domingo Manhã vs outros cultos
+    const morningServices = schedule.services.filter(s => s.type.includes('Manhã'));
+    const regularServices = schedule.services.filter(s => !s.type.includes('Manhã'));
+
+    // Header
+    doc.setFillColor(75, 0, 130); // Roxo
+    doc.rect(0, 0, 297, 30, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Congregação Cristã no Brasil', 148.5, 12, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${CHURCH_INFO.city} - ${CHURCH_INFO.neighborhood}`, 148.5, 20, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.text(`Escala de Operadores de Som - ${MONTH_NAMES[month]} ${year}`, 148.5, 27, { align: 'center' });
+
+    let currentY = 40;
+
+    // TABELA 1: Cultos Noturnos (Quarta e Domingo Noite)
+    if (regularServices.length > 0) {
+        doc.setTextColor(75, 0, 130);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CULTOS NOTURNOS (Quarta e Domingo Noite)', 15, currentY);
+        currentY += 5;
+
+        const regularHeaders = [['Data', 'Culto', 'Operador de Som']];
+        const regularData = regularServices.map(service => [
+            service.date,
+            service.type,
+            service.operadorSom || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: regularHeaders,
+            body: regularData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [75, 0, 130],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 10
+            },
+            bodyStyles: {
+                fontSize: 10,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 60 },
+                1: { cellWidth: 80 },
+                2: { cellWidth: 100 }
+            },
+            margin: { left: 15, right: 15 }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 15;
+    }
+
+    // TABELA 2: Domingo Manhã
+    if (morningServices.length > 0) {
+        doc.setTextColor(75, 0, 130);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DOMINGO MANHA (Jovens/Criancas)', 15, currentY);
+        currentY += 5;
+
+        const morningHeaders = [['Data', 'Operador de Som']];
+        const morningData = morningServices.map(service => [
+            service.date,
+            service.operadorSom || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: morningHeaders,
+            body: morningData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [75, 0, 130],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 10
+            },
+            bodyStyles: {
+                fontSize: 10,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 100 },
+                1: { cellWidth: 140 }
+            },
+            margin: { left: 15, right: 15 }
+        });
+    }
+
+    // Footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text(
+        `Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+        148.5,
+        pageHeight - 10,
+        { align: 'center' }
+    );
+
+    // Save
+    const fileName = `Escala_Som_CCB_${MONTH_NAMES[month]}_${year}.pdf`;
+
+    try {
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const newWindow = window.open(pdfUrl, '_blank');
+
+        if (!newWindow) {
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+    }
+}
+
+// ========================================
 // GLOBAL FUNCTIONS (for onclick handlers)
 // ========================================
 
@@ -1033,3 +1388,11 @@ window.showLoginForm = showLoginForm;
 window.handleLogin = handleLogin;
 window.handleRegister = handleRegister;
 window.handleLogout = handleLogout;
+
+// Som functions
+window.generateSomScheduleForm = generateSomScheduleForm;
+window.saveSomSchedule = saveSomSchedule;
+window.generateSomPDF = generateSomPDF;
+window.generateSomPDFForSchedule = generateSomPDFForSchedule;
+window.loadSavedSomSchedule = loadSavedSomSchedule;
+window.deleteSomSchedule = deleteSomSchedule;

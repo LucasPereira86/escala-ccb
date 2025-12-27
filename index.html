@@ -83,6 +83,10 @@
                 <span class="tab-icon">📅</span>
                 <span>Escalas</span>
             </button>
+            <button class="tab-btn" data-tab="som">
+                <span class="tab-icon">🎤</span>
+                <span>Som</span>
+            </button>
         </nav>
 
         <!-- Main Content -->
@@ -263,7 +267,6 @@
                                         <th>Porteiro Lateral</th>
                                         <th>Auxiliar Principal</th>
                                         <th>Auxiliar Lateral</th>
-                                        <th>Operador Som</th>
                                     </tr>
                                 </thead>
                                 <tbody id="schedule-body">
@@ -281,6 +284,87 @@
                         <!-- Populated by JS -->
                     </div>
                     <p class="empty-message" id="schedules-empty">Nenhuma escala salva</p>
+                </div>
+            </section>
+
+            <!-- Som Tab -->
+            <section id="som" class="tab-content">
+                <div class="section-header">
+                    <h2>🎤 Escala de Operadores de Som</h2>
+                </div>
+
+                <!-- Month/Year Selector for Som -->
+                <div class="form-card">
+                    <h3>Selecionar Período</h3>
+                    <div class="period-selector">
+                        <div class="form-group">
+                            <label for="som-month-select">Mês</label>
+                            <select id="som-month-select">
+                                <option value="0">Janeiro</option>
+                                <option value="1">Fevereiro</option>
+                                <option value="2">Março</option>
+                                <option value="3">Abril</option>
+                                <option value="4">Maio</option>
+                                <option value="5">Junho</option>
+                                <option value="6">Julho</option>
+                                <option value="7">Agosto</option>
+                                <option value="8">Setembro</option>
+                                <option value="9">Outubro</option>
+                                <option value="10">Novembro</option>
+                                <option value="11">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="som-year-select">Ano</label>
+                            <select id="som-year-select">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="generateSomScheduleForm()">
+                            <span>📅</span> Gerar Calendário
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Som Schedule Form -->
+                <div class="schedule-form-container" id="som-schedule-form-container" style="display: none;">
+                    <div class="form-card">
+                        <div class="schedule-header">
+                            <h3 id="som-schedule-title">Escala de Som - Janeiro 2025</h3>
+                            <div class="schedule-actions">
+                                <button class="btn-secondary" onclick="saveSomSchedule()">
+                                    <span>💾</span> Salvar
+                                </button>
+                                <button class="btn-primary" onclick="generateSomPDF()">
+                                    <span>📄</span> Gerar PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="schedule-table-container">
+                            <table class="schedule-table" id="som-schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Culto</th>
+                                        <th>Operador de Som</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="som-schedule-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Som Schedules -->
+                <div class="saved-schedules">
+                    <h3>Escalas de Som Salvas</h3>
+                    <div class="schedules-list" id="saved-som-schedules-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <p class="empty-message" id="som-schedules-empty">Nenhuma escala de som salva</p>
                 </div>
             </section>
         </main>
