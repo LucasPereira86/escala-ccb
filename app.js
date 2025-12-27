@@ -586,91 +586,162 @@ function generatePDFForSchedule(month, year) {
     doc.setFontSize(10);
     doc.text(`Escala de Porteiros e Auxiliares da Porta - ${MONTH_NAMES[month]} ${year}`, 148.5, 27, { align: 'center' });
 
-    // Configuração comum das tabelas
-    const tableHeaders = [[
-        'Data',
-        'Culto',
-        'Porteiro Principal',
-        'Porteiro Lateral',
-        'Auxiliar Principal',
-        'Auxiliar Lateral'
-    ]];
+    let currentY = 35;
 
-    const commonTableConfig = {
-        theme: 'grid',
-        headStyles: {
-            fillColor: [30, 64, 175],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            halign: 'center',
-            fontSize: 9
-        },
-        bodyStyles: {
-            fontSize: 8,
-            halign: 'center'
-        },
-        columnStyles: {
-            0: { cellWidth: 35 },
-            1: { cellWidth: 50 },
-            2: { cellWidth: 45 },
-            3: { cellWidth: 45 },
-            4: { cellWidth: 45 },
-            5: { cellWidth: 45 }
-        },
-        margin: { left: 15, right: 15 },
-        // Hook para colorir colunas de auxiliares em rosa
-        didParseCell: function (data) {
-            // Colunas 4 e 5 = Auxiliar Principal e Auxiliar Lateral
-            if (data.section === 'body' && (data.column.index === 4 || data.column.index === 5)) {
-                data.cell.styles.fillColor = [255, 182, 193]; // Rosa claro
-            }
-        }
-    };
-
-    // TABELA 1: Cultos Regulares (Quarta Noite + Domingo Noite)
+    // =====================================================
+    // TABELA 1: IRMÃOS (Porteiros) - Cultos Regulares
+    // =====================================================
     if (regularServices.length > 0) {
-        const regularTableData = regularServices.map(service => [
+        doc.setTextColor(30, 64, 175);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('👔 ESCALA DOS IRMÃOS (Porteiros)', 15, currentY);
+        currentY += 5;
+
+        const irmãosHeaders = [['Data', 'Culto', 'Porteiro Principal', 'Porteiro Lateral']];
+        const irmãosData = regularServices.map(service => [
             service.date,
             service.type,
             service.porteiroPrincipal || '-',
-            service.porteiroLateral || '-',
-            service.auxiliarPrincipal || '-',
-            service.auxiliarLateral || '-'
+            service.porteiroLateral || '-'
         ]);
 
         doc.autoTable({
-            ...commonTableConfig,
-            startY: 35,
-            head: tableHeaders,
-            body: regularTableData
+            startY: currentY,
+            head: irmãosHeaders,
+            body: irmãosData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [30, 64, 175],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 45 },
+                1: { cellWidth: 55 },
+                2: { cellWidth: 60 },
+                3: { cellWidth: 60 }
+            },
+            margin: { left: 15, right: 15 }
         });
+
+        currentY = doc.lastAutoTable.finalY + 12;
     }
 
-    // TABELA 2: Cultos de Domingo Manhã (Jovens/Crianças) - Separada
-    if (morningServices.length > 0) {
-        const morningTableData = morningServices.map(service => [
+    // =====================================================
+    // TABELA 2: IRMÃS (Auxiliares da Porta) - Cultos Regulares
+    // =====================================================
+    if (regularServices.length > 0) {
+        doc.setTextColor(199, 21, 133); // Rosa escuro
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('👗 ESCALA DAS IRMÃS (Auxiliares da Porta)', 15, currentY);
+        currentY += 5;
+
+        const irmãsHeaders = [['Data', 'Culto', 'Auxiliar Principal', 'Auxiliar Lateral']];
+        const irmãsData = regularServices.map(service => [
             service.date,
             service.type,
+            service.auxiliarPrincipal || '-',
+            service.auxiliarLateral || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: irmãsHeaders,
+            body: irmãsData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [199, 21, 133], // Rosa escuro
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center',
+                fillColor: [255, 240, 245] // Rosa bem claro
+            },
+            columnStyles: {
+                0: { cellWidth: 45 },
+                1: { cellWidth: 55 },
+                2: { cellWidth: 60 },
+                3: { cellWidth: 60 }
+            },
+            margin: { left: 15, right: 15 }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 12;
+    }
+
+    // =====================================================
+    // TABELA 3: CULTO DOMINGO MANHÃ (Jovens/Crianças)
+    // =====================================================
+    if (morningServices.length > 0) {
+        // Verificar se precisa de nova página
+        if (currentY > 160) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        doc.setTextColor(34, 139, 34); // Verde
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('🌅 CULTO DOMINGO MANHÃ (Jovens/Crianças)', 15, currentY);
+        currentY += 5;
+
+        const morningHeaders = [[
+            'Data',
+            'Porteiro Principal',
+            'Porteiro Lateral',
+            'Auxiliar Principal',
+            'Auxiliar Lateral'
+        ]];
+        const morningData = morningServices.map(service => [
+            service.date,
             service.porteiroPrincipal || '-',
             service.porteiroLateral || '-',
             service.auxiliarPrincipal || '-',
             service.auxiliarLateral || '-'
         ]);
 
-        // Posição Y após a primeira tabela
-        let startYMorning = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 35;
-
-        // Subtítulo para tabela de Domingo Manhã
-        doc.setTextColor(30, 64, 175);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Cultos de Domingo - Manhã (Jovens/Crianças)', 15, startYMorning);
-
         doc.autoTable({
-            ...commonTableConfig,
-            startY: startYMorning + 5,
-            head: tableHeaders,
-            body: morningTableData
+            startY: currentY,
+            head: morningHeaders,
+            body: morningData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [34, 139, 34], // Verde
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 45 },
+                1: { cellWidth: 50 },
+                2: { cellWidth: 50 },
+                3: { cellWidth: 50 },
+                4: { cellWidth: 50 }
+            },
+            margin: { left: 15, right: 15 },
+            // Colorir colunas das auxiliares em rosa
+            didParseCell: function (data) {
+                if (data.section === 'body' && (data.column.index === 3 || data.column.index === 4)) {
+                    data.cell.styles.fillColor = [255, 240, 245]; // Rosa claro
+                }
+            }
         });
     }
 
@@ -721,6 +792,7 @@ function generatePDFForSchedule(month, year) {
         alert('Erro ao gerar PDF. Tente novamente.');
     }
 }
+
 
 // ========================================
 // DASHBOARD
