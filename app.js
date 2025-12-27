@@ -23,7 +23,7 @@ const MONTH_NAMES = [
 const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 // Cache for data
-let membersCache = { porteiros: [], auxiliares: [] };
+let membersCache = { porteiros: [], auxiliares: [], som: [] };
 let schedulesCache = [];
 
 // ========================================
@@ -195,8 +195,11 @@ async function addMember() {
 
     if (type === 'porteiro') {
         members.porteiros.push(newMember);
-    } else {
+    } else if (type === 'auxiliar') {
         members.auxiliares.push(newMember);
+    } else if (type === 'som') {
+        if (!members.som) members.som = [];
+        members.som.push(newMember);
     }
 
     await saveMembers(members);
@@ -222,8 +225,12 @@ async function removeMember(type, id) {
 
     if (type === 'porteiro') {
         members.porteiros = members.porteiros.filter(m => m.id !== id);
-    } else {
+    } else if (type === 'auxiliar') {
         members.auxiliares = members.auxiliares.filter(m => m.id !== id);
+    } else if (type === 'som') {
+        if (members.som) {
+            members.som = members.som.filter(m => m.id !== id);
+        }
     }
 
     await saveMembers(members);
@@ -276,6 +283,31 @@ function loadMembers() {
                     <li class="member-item">
                         <span class="member-name">${member.name}</span>
                         <button class="btn-danger" onclick="removeMember('auxiliar', ${member.id})">
+                            Remover
+                        </button>
+                    </li>
+                `;
+            });
+        }
+    }
+
+    // Operadores de Som
+    const somList = document.getElementById('som-list');
+    const somEmpty = document.getElementById('som-empty');
+
+    if (somList) {
+        somList.innerHTML = '';
+        const somMembers = members.som || [];
+
+        if (somMembers.length === 0) {
+            somEmpty.style.display = 'block';
+        } else {
+            somEmpty.style.display = 'none';
+            somMembers.forEach(member => {
+                somList.innerHTML += `
+                    <li class="member-item">
+                        <span class="member-name">${member.name}</span>
+                        <button class="btn-danger" onclick="removeMember('som', ${member.id})">
                             Remover
                         </button>
                     </li>
@@ -396,6 +428,7 @@ function generateScheduleForm() {
             <td>${createMemberSelect('porteiro-lateral', serviceId, members.porteiros, savedData?.porteiroLateral)}</td>
             <td>${createMemberSelect('auxiliar-principal', serviceId, members.auxiliares, savedData?.auxiliarPrincipal)}</td>
             <td>${createMemberSelect('auxiliar-lateral', serviceId, members.auxiliares, savedData?.auxiliarLateral)}</td>
+            <td>${createMemberSelect('operador-som', serviceId, members.som || [], savedData?.operadorSom)}</td>
         `;
 
         tbody.appendChild(row);
@@ -446,7 +479,8 @@ async function saveSchedule() {
             porteiroPrincipal: document.getElementById(`porteiro-principal-${serviceId}`)?.value || '',
             porteiroLateral: document.getElementById(`porteiro-lateral-${serviceId}`)?.value || '',
             auxiliarPrincipal: document.getElementById(`auxiliar-principal-${serviceId}`)?.value || '',
-            auxiliarLateral: document.getElementById(`auxiliar-lateral-${serviceId}`)?.value || ''
+            auxiliarLateral: document.getElementById(`auxiliar-lateral-${serviceId}`)?.value || '',
+            operadorSom: document.getElementById(`operador-som-${serviceId}`)?.value || ''
         });
     });
 
@@ -778,6 +812,104 @@ function generatePDFForSchedule(month, year) {
             },
             margin: { left: 15, right: 15 }
         });
+
+        currentY = doc.lastAutoTable.finalY + 12;
+    }
+
+    // =====================================================
+    // TABELA 5: SOM - CULTOS NOTURNOS (Quarta e Domingo Noite)
+    // =====================================================
+    if (regularServices.length > 0) {
+        // Verificar se precisa de nova página
+        if (currentY > 160) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        doc.setTextColor(75, 0, 130); // Roxo
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('OPERADORES DE SOM - CULTOS NOTURNOS', 15, currentY);
+        currentY += 5;
+
+        const somNoturnoHeaders = [['Data', 'Culto', 'Operador de Som']];
+        const somNoturnoData = regularServices.map(service => [
+            service.date,
+            service.type,
+            service.operadorSom || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: somNoturnoHeaders,
+            body: somNoturnoData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [75, 0, 130], // Roxo
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 55 },
+                1: { cellWidth: 70 },
+                2: { cellWidth: 80 }
+            },
+            margin: { left: 15, right: 15 }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 12;
+    }
+
+    // =====================================================
+    // TABELA 6: SOM - DOMINGO MANHÃ
+    // =====================================================
+    if (morningServices.length > 0) {
+        // Verificar se precisa de nova página
+        if (currentY > 160) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        doc.setTextColor(75, 0, 130); // Roxo
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('OPERADORES DE SOM - DOMINGO MANHA', 15, currentY);
+        currentY += 5;
+
+        const somManhaHeaders = [['Data', 'Operador de Som']];
+        const somManhaData = morningServices.map(service => [
+            service.date,
+            service.operadorSom || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: somManhaHeaders,
+            body: somManhaData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [75, 0, 130], // Roxo
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 80 },
+                1: { cellWidth: 100 }
+            },
+            margin: { left: 15, right: 15 }
+        });
     }
 
     // Footer
@@ -833,10 +965,12 @@ function updateDashboard() {
 
     const porteirosEl = document.getElementById('total-porteiros');
     const auxiliaresEl = document.getElementById('total-auxiliares');
+    const somEl = document.getElementById('total-som');
     const escalasEl = document.getElementById('total-escalas');
 
     if (porteirosEl) porteirosEl.textContent = members.porteiros.length;
     if (auxiliaresEl) auxiliaresEl.textContent = members.auxiliares.length;
+    if (somEl) somEl.textContent = (members.som || []).length;
     if (escalasEl) escalasEl.textContent = schedules.length;
 }
 
