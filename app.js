@@ -682,7 +682,7 @@ function generatePDFForSchedule(month, year) {
     }
 
     // =====================================================
-    // TABELA 3: CULTO DOMINGO MANHÃ (Jovens/Crianças)
+    // TABELA 3: DOMINGO MANHÃ - IRMÃOS (Porteiros)
     // =====================================================
     if (morningServices.length > 0) {
         // Verificar se precisa de nova página
@@ -691,34 +691,26 @@ function generatePDFForSchedule(month, year) {
             currentY = 20;
         }
 
-        doc.setTextColor(34, 139, 34); // Verde
+        doc.setTextColor(30, 64, 175); // Azul
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('CULTO DOMINGO MANHA (Jovens/Criancas)', 15, currentY);
+        doc.text('DOMINGO MANHA - IRMAOS (Porteiros)', 15, currentY);
         currentY += 5;
 
-        const morningHeaders = [[
-            'Data',
-            'Porteiro Principal',
-            'Porteiro Lateral',
-            'Auxiliar Principal',
-            'Auxiliar Lateral'
-        ]];
-        const morningData = morningServices.map(service => [
+        const morningIrmaosHeaders = [['Data', 'Porteiro Principal', 'Porteiro Lateral']];
+        const morningIrmaosData = morningServices.map(service => [
             service.date,
             service.porteiroPrincipal || '-',
-            service.porteiroLateral || '-',
-            service.auxiliarPrincipal || '-',
-            service.auxiliarLateral || '-'
+            service.porteiroLateral || '-'
         ]);
 
         doc.autoTable({
             startY: currentY,
-            head: morningHeaders,
-            body: morningData,
+            head: morningIrmaosHeaders,
+            body: morningIrmaosData,
             theme: 'grid',
             headStyles: {
-                fillColor: [34, 139, 34], // Verde
+                fillColor: [30, 64, 175],
                 textColor: [255, 255, 255],
                 fontStyle: 'bold',
                 halign: 'center',
@@ -729,19 +721,62 @@ function generatePDFForSchedule(month, year) {
                 halign: 'center'
             },
             columnStyles: {
-                0: { cellWidth: 45 },
-                1: { cellWidth: 50 },
-                2: { cellWidth: 50 },
-                3: { cellWidth: 50 },
-                4: { cellWidth: 50 }
+                0: { cellWidth: 55 },
+                1: { cellWidth: 70 },
+                2: { cellWidth: 70 }
             },
-            margin: { left: 15, right: 15 },
-            // Colorir colunas das auxiliares em rosa
-            didParseCell: function (data) {
-                if (data.section === 'body' && (data.column.index === 3 || data.column.index === 4)) {
-                    data.cell.styles.fillColor = [255, 240, 245]; // Rosa claro
-                }
-            }
+            margin: { left: 15, right: 15 }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 12;
+    }
+
+    // =====================================================
+    // TABELA 4: DOMINGO MANHÃ - IRMÃS (Auxiliares)
+    // =====================================================
+    if (morningServices.length > 0) {
+        // Verificar se precisa de nova página
+        if (currentY > 160) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        doc.setTextColor(199, 21, 133); // Rosa escuro
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DOMINGO MANHA - IRMAS (Auxiliares da Porta)', 15, currentY);
+        currentY += 5;
+
+        const morningIrmasHeaders = [['Data', 'Auxiliar Principal', 'Auxiliar Lateral']];
+        const morningIrmasData = morningServices.map(service => [
+            service.date,
+            service.auxiliarPrincipal || '-',
+            service.auxiliarLateral || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: morningIrmasHeaders,
+            body: morningIrmasData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [199, 21, 133], // Rosa escuro
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center',
+                fillColor: [255, 240, 245] // Rosa bem claro
+            },
+            columnStyles: {
+                0: { cellWidth: 55 },
+                1: { cellWidth: 70 },
+                2: { cellWidth: 70 }
+            },
+            margin: { left: 15, right: 15 }
         });
     }
 
