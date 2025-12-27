@@ -768,11 +768,8 @@ function generatePDFForSchedule(month, year) {
         // Create a new window with the PDF
         const newWindow = window.open(pdfUrl, '_blank');
 
-        if (newWindow) {
-            // Show alert with save instructions
-            alert(`📄 O PDF foi aberto em uma nova aba!\n\nPara salvar:\n1. Clique com botão direito → "Salvar como"\n2. Ou use Ctrl+S\n\n💡 Salve como: ${fileName}`);
-        } else {
-            // Popup blocked, try alternative
+        if (!newWindow) {
+            // Popup blocked, try alternative download
             const link = document.createElement('a');
             link.href = pdfUrl;
             link.download = fileName;
@@ -780,8 +777,6 @@ function generatePDFForSchedule(month, year) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
-            alert(`📄 PDF gerado!\n\nSe o arquivo foi baixado sem nome:\n1. Vá na pasta Downloads\n2. Renomeie o arquivo para:\n${fileName}`);
         }
 
         // Cleanup URL after delay
@@ -789,7 +784,6 @@ function generatePDFForSchedule(month, year) {
 
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);
-        alert('Erro ao gerar PDF. Tente novamente.');
     }
 }
 
