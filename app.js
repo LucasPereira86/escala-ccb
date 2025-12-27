@@ -595,7 +595,7 @@ function generatePDFForSchedule(month, year) {
         doc.setTextColor(30, 64, 175);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('👔 ESCALA DOS IRMÃOS (Porteiros)', 15, currentY);
+        doc.text('ESCALA DOS IRMAOS (Porteiros)', 15, currentY);
         currentY += 5;
 
         const irmãosHeaders = [['Data', 'Culto', 'Porteiro Principal', 'Porteiro Lateral']];
@@ -641,7 +641,7 @@ function generatePDFForSchedule(month, year) {
         doc.setTextColor(199, 21, 133); // Rosa escuro
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('👗 ESCALA DAS IRMÃS (Auxiliares da Porta)', 15, currentY);
+        doc.text('ESCALA DAS IRMAS (Auxiliares da Porta)', 15, currentY);
         currentY += 5;
 
         const irmãsHeaders = [['Data', 'Culto', 'Auxiliar Principal', 'Auxiliar Lateral']];
@@ -694,7 +694,7 @@ function generatePDFForSchedule(month, year) {
         doc.setTextColor(34, 139, 34); // Verde
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('🌅 CULTO DOMINGO MANHÃ (Jovens/Crianças)', 15, currentY);
+        doc.text('CULTO DOMINGO MANHA (Jovens/Criancas)', 15, currentY);
         currentY += 5;
 
         const morningHeaders = [[
