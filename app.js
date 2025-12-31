@@ -342,7 +342,7 @@ function setupYearSelector() {
 
     const currentYear = new Date().getFullYear();
 
-    for (let year = currentYear; year <= currentYear + 2; year++) {
+    for (let year = currentYear - 1; year <= currentYear + 5; year++) {
         yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
     }
 }
@@ -1041,7 +1041,7 @@ function setupSomYearSelector() {
     if (!yearSelect) return;
 
     const currentYear = new Date().getFullYear();
-    for (let year = currentYear; year <= currentYear + 2; year++) {
+    for (let year = currentYear - 1; year <= currentYear + 5; year++) {
         yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
     }
 }
