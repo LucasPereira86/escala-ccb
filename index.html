@@ -87,6 +87,10 @@
                 <span class="tab-icon">🎤</span>
                 <span>Som</span>
             </button>
+            <button class="tab-btn" data-tab="brigadista">
+                <span class="tab-icon">🧯</span>
+                <span>Brigadista</span>
+            </button>
         </nav>
 
         <!-- Main Content -->
@@ -113,6 +117,13 @@
                         <div class="stat-info">
                             <span class="stat-number" id="total-som">0</span>
                             <span class="stat-label">Operadores Som</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🧯</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-brigadista">0</span>
+                            <span class="stat-label">Brigadistas</span>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -168,6 +179,7 @@
                                     <option value="porteiro">Porteiro (Irmão)</option>
                                     <option value="auxiliar">Auxiliar da Porta (Irmã)</option>
                                     <option value="som">Operador de Som (Irmão)</option>
+                                    <option value="brigadista">Brigadista (Voluntário)</option>
                                 </select>
                             </div>
                             <div class="form-group full-width">
@@ -216,6 +228,13 @@
                             <!-- Populated by JS -->
                         </ul>
                         <p class="empty-message" id="som-empty">Nenhum operador de som cadastrado</p>
+                    </div>
+                    <div class="members-card">
+                        <h3>🧯 Brigadistas (Voluntários)</h3>
+                        <ul class="members-list" id="brigadista-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                        <p class="empty-message" id="brigadista-empty">Nenhum brigadista cadastrado</p>
                     </div>
                 </div>
             </section>
@@ -385,6 +404,87 @@
                         <!-- Populated by JS -->
                     </div>
                     <p class="empty-message" id="som-schedules-empty">Nenhuma escala de som salva</p>
+                </div>
+            </section>
+
+            <!-- Brigadista Tab -->
+            <section id="brigadista" class="tab-content">
+                <div class="section-header">
+                    <h2>🧯 Escala de Brigadistas</h2>
+                </div>
+
+                <!-- Month/Year Selector for Brigadista -->
+                <div class="form-card">
+                    <h3>Selecionar Período</h3>
+                    <div class="period-selector">
+                        <div class="form-group">
+                            <label for="brigadista-month-select">Mês</label>
+                            <select id="brigadista-month-select">
+                                <option value="0">Janeiro</option>
+                                <option value="1">Fevereiro</option>
+                                <option value="2">Março</option>
+                                <option value="3">Abril</option>
+                                <option value="4">Maio</option>
+                                <option value="5">Junho</option>
+                                <option value="6">Julho</option>
+                                <option value="7">Agosto</option>
+                                <option value="8">Setembro</option>
+                                <option value="9">Outubro</option>
+                                <option value="10">Novembro</option>
+                                <option value="11">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="brigadista-year-select">Ano</label>
+                            <select id="brigadista-year-select">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="generateBrigadistaScheduleForm()">
+                            <span>📅</span> Gerar Calendário
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Brigadista Schedule Form -->
+                <div class="schedule-form-container" id="brigadista-schedule-form-container" style="display: none;">
+                    <div class="form-card">
+                        <div class="schedule-header">
+                            <h3 id="brigadista-schedule-title">Escala de Brigadistas - Janeiro 2025</h3>
+                            <div class="schedule-actions">
+                                <button class="btn-secondary" onclick="saveBrigadistaSchedule()">
+                                    <span>💾</span> Salvar
+                                </button>
+                                <button class="btn-primary" onclick="generateBrigadistaPDF()">
+                                    <span>📄</span> Gerar PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="schedule-table-container">
+                            <table class="schedule-table" id="brigadista-schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Culto</th>
+                                        <th>Brigadista</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="brigadista-schedule-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Brigadista Schedules -->
+                <div class="saved-schedules">
+                    <h3>Escalas de Brigadistas Salvas</h3>
+                    <div class="schedules-list" id="saved-brigadista-schedules-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <p class="empty-message" id="brigadista-schedules-empty">Nenhuma escala de brigadista salva</p>
                 </div>
             </section>
         </main>

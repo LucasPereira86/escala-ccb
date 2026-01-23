@@ -138,15 +138,15 @@ async function saveMembersToDb(members) {
 // Load members from database
 async function loadMembersFromDb() {
     const path = getDataPath();
-    if (!path) return { porteiros: [], auxiliares: [], som: [] };
+    if (!path) return { porteiros: [], auxiliares: [], som: [], brigadista: [] };
 
     try {
         const snapshot = await database.ref(`${path}/members`).once('value');
         const data = snapshot.val();
-        return data || { porteiros: [], auxiliares: [], som: [] };
+        return data || { porteiros: [], auxiliares: [], som: [], brigadista: [] };
     } catch (error) {
         console.error('Erro ao carregar membros:', error);
-        return { porteiros: [], auxiliares: [] };
+        return { porteiros: [], auxiliares: [], som: [], brigadista: [] };
     }
 }
 
@@ -208,6 +208,35 @@ async function loadSomSchedulesFromDb() {
     }
 }
 
+// Save BRIGADISTA schedules to database
+async function saveBrigadistaSchedulesToDb(schedules) {
+    const path = getDataPath();
+    if (!path) return false;
+
+    try {
+        await database.ref(`${path}/brigadista_schedules`).set(schedules);
+        return true;
+    } catch (error) {
+        console.error('Erro ao salvar escalas de brigadista:', error);
+        return false;
+    }
+}
+
+// Load BRIGADISTA schedules from database
+async function loadBrigadistaSchedulesFromDb() {
+    const path = getDataPath();
+    if (!path) return [];
+
+    try {
+        const snapshot = await database.ref(`${path}/brigadista_schedules`).once('value');
+        const data = snapshot.val();
+        return data || [];
+    } catch (error) {
+        console.error('Erro ao carregar escalas de brigadista:', error);
+        return [];
+    }
+}
+
 // ========================================
 // UI HELPERS
 // ========================================
@@ -256,6 +285,8 @@ window.saveSchedulesToDb = saveSchedulesToDb;
 window.loadSchedulesFromDb = loadSchedulesFromDb;
 window.saveSomSchedulesToDb = saveSomSchedulesToDb;
 window.loadSomSchedulesFromDb = loadSomSchedulesFromDb;
+window.saveBrigadistaSchedulesToDb = saveBrigadistaSchedulesToDb;
+window.loadBrigadistaSchedulesFromDb = loadBrigadistaSchedulesFromDb;
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 window.showError = showError;
