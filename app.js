@@ -196,7 +196,12 @@ async function addMember() {
     const members = getMembers();
     const newMember = {
         id: Date.now(),
-        name: name
+        name: name,
+        availability: {
+            wednesday: document.querySelector('input[name="availability"][value="wednesday"]').checked,
+            sunday_morning: document.querySelector('input[name="availability"][value="sunday_morning"]').checked,
+            sunday_night: document.querySelector('input[name="availability"][value="sunday_night"]').checked
+        }
     };
 
     if (type === 'porteiro') {
@@ -578,6 +583,56 @@ async function deleteSchedule(id) {
     updateDashboard();
 
     hideLoading();
+}
+
+// ========================================
+// AI SCHEDULER HELPER
+// ========================================
+
+function generateAISchedule() {
+    const month = parseInt(document.getElementById('month-select').value);
+    const year = parseInt(document.getElementById('year-select').value);
+
+    // Check if there are enough members
+    const members = getMembers();
+    if (members.porteiros.length < 2 || members.auxiliares.length < 2) {
+        alert('É necessário ter pelo menos 2 porteiros e 2 auxiliares cadastrados para usar a IA.');
+        return;
+    }
+
+    if (!confirm('A IA vai preencher a escala automaticamente respeitando as disponibilidades. Os dados atuais do formulário serão substituídos. Deseja continuar?')) {
+        return;
+    }
+
+    showLoading('IA está montando a escala...');
+
+    // Small delay to allow UI to render the loading state
+    setTimeout(() => {
+        try {
+            const generatedSchedule = AI_SCHEDULER.generate(month, year, members);
+
+            // Fill the form
+            generatedSchedule.forEach(item => {
+                const serviceId = `${year}-${month}-${item.serviceIndex}`;
+
+                // Construct ID for the select element
+                // item.role is like 'porteiroPrincipal', but ID uses 'porteiro-principal'
+                const selectId = item.role.replace(/([A-Z])/g, "-$1").toLowerCase() + '-' + serviceId;
+
+                const selectEl = document.getElementById(selectId);
+                if (selectEl) {
+                    selectEl.value = item.member.name;
+                }
+            });
+
+            hideLoading();
+            alert('Escala preenchida com sucesso! Verifique os resultados e salve.');
+        } catch (error) {
+            console.error(error);
+            hideLoading();
+            alert('Erro ao gerar escala: ' + error.message);
+        }
+    }, 500);
 }
 
 // ========================================
