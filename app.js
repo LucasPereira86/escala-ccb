@@ -23,7 +23,7 @@ const MONTH_NAMES = [
 const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 // Cache for data
-let membersCache = { porteiros: [], auxiliares: [], som: [] };
+let membersCache = { porteiros: [], auxiliares: [], som: [], brigadista: [] };
 let schedulesCache = [];
 
 // ========================================
@@ -107,6 +107,10 @@ async function initApp() {
     setupSomYearSelector();
     setSomCurrentMonthYear();
 
+    // Setup Brigadista tab
+    setupBrigadistaYearSelector();
+    setBrigadistaCurrentMonthYear();
+
     // Load data from Firebase
     await loadDataFromFirebase();
 
@@ -121,9 +125,11 @@ async function loadDataFromFirebase() {
         membersCache = await loadMembersFromDb();
         schedulesCache = await loadSchedulesFromDb();
         somSchedulesCache = await loadSomSchedulesFromDb();
+        brigadistaSchedulesCache = await loadBrigadistaSchedulesFromDb();
         loadMembers();
         loadSchedules();
         loadSomSchedules();
+        loadBrigadistaSchedules();
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
     }
@@ -206,6 +212,9 @@ async function addMember() {
     } else if (type === 'som') {
         if (!members.som) members.som = [];
         members.som.push(newMember);
+    } else if (type === 'brigadista') {
+        if (!members.brigadista) members.brigadista = [];
+        members.brigadista.push(newMember);
     }
 
     await saveMembers(members);
@@ -236,6 +245,10 @@ async function removeMember(type, id) {
     } else if (type === 'som') {
         if (members.som) {
             members.som = members.som.filter(m => m.id !== id);
+        }
+    } else if (type === 'brigadista') {
+        if (members.brigadista) {
+            members.brigadista = members.brigadista.filter(m => m.id !== id);
         }
     }
 
@@ -314,6 +327,31 @@ function loadMembers() {
                     <li class="member-item">
                         <span class="member-name">${member.name}</span>
                         <button class="btn-danger" onclick="removeMember('som', ${member.id})">
+                            Remover
+                        </button>
+                    </li>
+                `;
+            });
+        }
+    }
+
+    // Brigadistas
+    const brigadistaList = document.getElementById('brigadista-list');
+    const brigadistaEmpty = document.getElementById('brigadista-empty');
+
+    if (brigadistaList) {
+        brigadistaList.innerHTML = '';
+        const brigadistaMembers = members.brigadista || [];
+
+        if (brigadistaMembers.length === 0) {
+            brigadistaEmpty.style.display = 'block';
+        } else {
+            brigadistaEmpty.style.display = 'none';
+            brigadistaMembers.forEach(member => {
+                brigadistaList.innerHTML += `
+                    <li class="member-item">
+                        <span class="member-name">${member.name}</span>
+                        <button class="btn-danger" onclick="removeMember('brigadista', ${member.id})">
                             Remover
                         </button>
                     </li>
@@ -970,11 +1008,13 @@ function updateDashboard() {
     const porteirosEl = document.getElementById('total-porteiros');
     const auxiliaresEl = document.getElementById('total-auxiliares');
     const somEl = document.getElementById('total-som');
+    const brigadistaEl = document.getElementById('total-brigadista');
     const escalasEl = document.getElementById('total-escalas');
 
     if (porteirosEl) porteirosEl.textContent = members.porteiros.length;
     if (auxiliaresEl) auxiliaresEl.textContent = members.auxiliares.length;
     if (somEl) somEl.textContent = (members.som || []).length;
+    if (brigadistaEl) brigadistaEl.textContent = (members.brigadista || []).length;
     if (escalasEl) escalasEl.textContent = schedules.length;
 }
 
@@ -1373,6 +1413,290 @@ function generateSomPDFForSchedule(month, year) {
 }
 
 // ========================================
+// BRIGADISTA SCHEDULE MANAGEMENT
+// ========================================
+
+let brigadistaSchedulesCache = [];
+
+function getBrigadistaSchedules() {
+    return brigadistaSchedulesCache;
+}
+
+async function saveBrigadistaSchedulesData(schedules) {
+    brigadistaSchedulesCache = schedules;
+    await saveBrigadistaSchedulesToDb(schedules);
+}
+
+function setupBrigadistaYearSelector() {
+    const yearSelect = document.getElementById('brigadista-year-select');
+    if (!yearSelect) return;
+
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear - 1; year <= currentYear + 5; year++) {
+        yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+    }
+}
+
+function setBrigadistaCurrentMonthYear() {
+    const now = new Date();
+    const monthSelect = document.getElementById('brigadista-month-select');
+    const yearSelect = document.getElementById('brigadista-year-select');
+
+    if (monthSelect) monthSelect.value = now.getMonth();
+    if (yearSelect) yearSelect.value = now.getFullYear();
+}
+
+function generateBrigadistaScheduleForm() {
+    const month = parseInt(document.getElementById('brigadista-month-select').value);
+    const year = parseInt(document.getElementById('brigadista-year-select').value);
+
+    const members = getMembers();
+    const brigadistaMembers = members.brigadista || [];
+
+    if (brigadistaMembers.length < 1) {
+        alert('É necessário ter pelo menos 1 brigadista cadastrado para gerar a escala.');
+        return;
+    }
+
+    const services = getServiceDays(month, year);
+
+    document.getElementById('brigadista-schedule-title').textContent = `Escala de Brigadistas - ${MONTH_NAMES[month]} ${year}`;
+
+    const tbody = document.getElementById('brigadista-schedule-body');
+    tbody.innerHTML = '';
+
+    const schedules = getBrigadistaSchedules();
+    const existingSchedule = schedules.find(s => s.month === month && s.year === year);
+
+    services.forEach((service, index) => {
+        const dateStr = formatDate(service.date);
+        const serviceId = `${year}-${month}-${index}`;
+
+        let savedData = null;
+        if (existingSchedule) {
+            savedData = existingSchedule.services.find(s => s.serviceId === serviceId);
+        }
+
+        const row = document.createElement('tr');
+        row.className = service.cssClass;
+        row.innerHTML = `
+            <td class="date-cell">${dateStr}</td>
+            <td class="culto-cell">${service.type}</td>
+            <td>${createMemberSelect('brigadista-op', serviceId, brigadistaMembers, savedData?.brigadista)}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+
+    document.getElementById('brigadista-schedule-form-container').style.display = 'block';
+}
+
+async function saveBrigadistaSchedule() {
+    const month = parseInt(document.getElementById('brigadista-month-select').value);
+    const year = parseInt(document.getElementById('brigadista-year-select').value);
+
+    showLoading('Salvando escala de brigadistas...');
+
+    const rows = document.querySelectorAll('#brigadista-schedule-body tr');
+    const servicesData = [];
+
+    rows.forEach((row, index) => {
+        const serviceId = `${year}-${month}-${index}`;
+        const dateCell = row.querySelector('.date-cell').textContent;
+        const cultoCell = row.querySelector('.culto-cell').textContent;
+
+        servicesData.push({
+            serviceId: serviceId,
+            date: dateCell,
+            type: cultoCell,
+            brigadista: document.getElementById(`brigadista-op-${serviceId}`)?.value || ''
+        });
+    });
+
+    const schedules = getBrigadistaSchedules();
+
+    const existingIndex = schedules.findIndex(s => s.month === month && s.year === year);
+    if (existingIndex !== -1) {
+        schedules.splice(existingIndex, 1);
+    }
+
+    schedules.push({
+        id: Date.now(),
+        month: month,
+        year: year,
+        monthName: MONTH_NAMES[month],
+        services: servicesData,
+        createdAt: new Date().toISOString()
+    });
+
+    await saveBrigadistaSchedulesData(schedules);
+    loadBrigadistaSchedules();
+
+    hideLoading();
+    alert('Escala de brigadistas salva com sucesso!');
+}
+
+function loadBrigadistaSchedules() {
+    const schedules = getBrigadistaSchedules();
+    const list = document.getElementById('saved-brigadista-schedules-list');
+    const empty = document.getElementById('brigadista-schedules-empty');
+
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (schedules.length === 0) {
+        empty.style.display = 'block';
+    } else {
+        empty.style.display = 'none';
+
+        schedules.sort((a, b) => {
+            if (a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+        });
+
+        schedules.forEach(schedule => {
+            list.innerHTML += `
+                <div class="schedule-item">
+                    <div class="schedule-item-info">
+                        <span class="schedule-item-icon">🧯</span>
+                        <span class="schedule-item-name">${schedule.monthName} ${schedule.year}</span>
+                    </div>
+                    <div class="schedule-item-actions">
+                        <button class="btn-secondary" onclick="loadSavedBrigadistaSchedule(${schedule.month}, ${schedule.year})">
+                            📝 Editar
+                        </button>
+                        <button class="btn-primary" onclick="generateBrigadistaPDFForSchedule(${schedule.month}, ${schedule.year})">
+                            📄 PDF
+                        </button>
+                        <button class="btn-danger" onclick="deleteBrigadistaSchedule(${schedule.id})">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+function loadSavedBrigadistaSchedule(month, year) {
+    document.getElementById('brigadista-month-select').value = month;
+    document.getElementById('brigadista-year-select').value = year;
+    generateBrigadistaScheduleForm();
+}
+
+async function deleteBrigadistaSchedule(id) {
+    if (!confirm('Tem certeza que deseja excluir esta escala de brigadistas?')) {
+        return;
+    }
+
+    showLoading('Excluindo...');
+
+    let schedules = getBrigadistaSchedules();
+    schedules = schedules.filter(s => s.id !== id);
+    await saveBrigadistaSchedulesData(schedules);
+    loadBrigadistaSchedules();
+
+    hideLoading();
+}
+
+function generateBrigadistaPDF() {
+    const month = parseInt(document.getElementById('brigadista-month-select').value);
+    const year = parseInt(document.getElementById('brigadista-year-select').value);
+    generateBrigadistaPDFForSchedule(month, year);
+}
+
+function generateBrigadistaPDFForSchedule(month, year) {
+    const schedules = getBrigadistaSchedules();
+    const schedule = schedules.find(s => s.month === month && s.year === year);
+
+    if (!schedule) {
+        saveBrigadistaSchedule();
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait', 'mm', 'a4');
+
+    // Header
+    doc.setFillColor(220, 53, 69); // Vermelho
+    doc.rect(0, 0, 210, 30, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Congregação Cristã no Brasil', 105, 10, { align: 'center' });
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${CHURCH_INFO.city} - ${CHURCH_INFO.neighborhood}`, 105, 17, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.text(`Escala de Brigadistas - ${MONTH_NAMES[month]} ${year}`, 105, 24, { align: 'center' });
+
+    // Table
+    const headers = [['Data', 'Culto', 'Brigadista']];
+    const data = schedule.services.map(service => [
+        service.date,
+        service.type,
+        service.brigadista || '-'
+    ]);
+
+    doc.autoTable({
+        startY: 35,
+        head: headers,
+        body: data,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [220, 53, 69],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 10
+        },
+        bodyStyles: {
+            fontSize: 9,
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { cellWidth: 50 },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 60 }
+        },
+        margin: { left: 15, right: 15 }
+    });
+
+    // Footer
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text('🧯 Voluntários de Segurança', 105, finalY, { align: 'center' });
+
+    // Save
+    const fileName = `Escala_Brigadistas_CCB_${MONTH_NAMES[month]}_${year}.pdf`;
+
+    try {
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const newWindow = window.open(pdfUrl, '_blank');
+
+        if (!newWindow) {
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+    }
+}
+
+// ========================================
 // GLOBAL FUNCTIONS (for onclick handlers)
 // ========================================
 
@@ -1396,3 +1720,11 @@ window.generateSomPDF = generateSomPDF;
 window.generateSomPDFForSchedule = generateSomPDFForSchedule;
 window.loadSavedSomSchedule = loadSavedSomSchedule;
 window.deleteSomSchedule = deleteSomSchedule;
+
+// Brigadista functions
+window.generateBrigadistaScheduleForm = generateBrigadistaScheduleForm;
+window.saveBrigadistaSchedule = saveBrigadistaSchedule;
+window.generateBrigadistaPDF = generateBrigadistaPDF;
+window.generateBrigadistaPDFForSchedule = generateBrigadistaPDFForSchedule;
+window.loadSavedBrigadistaSchedule = loadSavedBrigadistaSchedule;
+window.deleteBrigadistaSchedule = deleteBrigadistaSchedule;
