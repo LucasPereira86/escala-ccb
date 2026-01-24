@@ -207,7 +207,9 @@ async function addMember() {
             wednesday: document.querySelector('input[name="availability"][value="wednesday"]').checked,
             sunday_morning: document.querySelector('input[name="availability"][value="sunday_morning"]').checked,
             sunday_night: document.querySelector('input[name="availability"][value="sunday_night"]').checked
-        }
+        },
+        oncePerMonth: document.getElementById('member-once-month').checked,
+        partnerId: document.getElementById('member-partner').value || null
     };
 
     if (type === 'porteiro') {
@@ -231,7 +233,36 @@ async function addMember() {
     // Reset form
     nameInput.value = '';
     typeSelect.value = '';
+    document.getElementById('member-once-month').checked = false;
+    document.getElementById('member-partner').value = '';
+
+    // Update partner dropdowns since we added a new member
+    updatePartnerDropdown();
+
     nameInput.focus();
+}
+
+function updatePartnerDropdown() {
+    const select = document.getElementById('member-partner');
+    if (!select) return;
+
+    const members = getMembers();
+    const allMembers = [
+        ...members.porteiros.map(m => ({ ...m, role: 'Porteiro' })),
+        ...members.auxiliares.map(m => ({ ...m, role: 'Auxiliar' })),
+        ...(members.som || []).map(m => ({ ...m, role: 'Som' }))
+    ];
+
+    // Save current selection to restore if possible
+    const currentVal = select.value;
+
+    select.innerHTML = '<option value="">-- Ninguém (Sem vínculo) --</option>';
+
+    allMembers.sort((a, b) => a.name.localeCompare(b.name)).forEach(m => {
+        select.innerHTML += `<option value="${m.id}">${m.name} (${m.role})</option>`;
+    });
+
+    select.value = currentVal;
 }
 
 async function removeMember(type, id) {
@@ -266,6 +297,9 @@ async function removeMember(type, id) {
 
 function loadMembers() {
     const members = getMembers();
+
+    // Update partner dropdown
+    updatePartnerDropdown();
 
     // Porteiros
     const porteirosList = document.getElementById('porteiros-list');
