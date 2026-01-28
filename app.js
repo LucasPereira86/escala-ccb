@@ -750,6 +750,38 @@ function generatePDF() {
     generatePDFForSchedule(month, year);
 }
 
+// Botão para gerar PDF de Porteiros
+function generatePDFPorteirosBtn() {
+    const month = parseInt(document.getElementById('month-select').value);
+    const year = parseInt(document.getElementById('year-select').value);
+
+    const schedules = getSchedules();
+    const schedule = schedules.find(s => s.month === month && s.year === year);
+
+    if (!schedule) {
+        alert('Salve a escala antes de gerar o PDF.');
+        return;
+    }
+
+    generatePDFPorteiros(month, year, schedule);
+}
+
+// Botão para gerar PDF de Auxiliares
+function generatePDFAuxiliaresBtn() {
+    const month = parseInt(document.getElementById('month-select').value);
+    const year = parseInt(document.getElementById('year-select').value);
+
+    const schedules = getSchedules();
+    const schedule = schedules.find(s => s.month === month && s.year === year);
+
+    if (!schedule) {
+        alert('Salve a escala antes de gerar o PDF.');
+        return;
+    }
+
+    generatePDFAuxiliares(month, year, schedule);
+}
+
 function generatePDFForSchedule(month, year) {
     const schedules = getSchedules();
     const schedule = schedules.find(s => s.month === month && s.year === year);
@@ -2010,6 +2042,8 @@ window.generateScheduleForm = generateScheduleForm;
 window.saveSchedule = saveSchedule;
 window.generatePDF = generatePDF;
 window.generatePDFForSchedule = generatePDFForSchedule;
+window.generatePDFPorteirosBtn = generatePDFPorteirosBtn;
+window.generatePDFAuxiliaresBtn = generatePDFAuxiliaresBtn;
 window.loadSavedSchedule = loadSavedSchedule;
 window.deleteSchedule = deleteSchedule;
 window.showLoginForm = showLoginForm;

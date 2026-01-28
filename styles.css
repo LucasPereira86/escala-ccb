@@ -445,6 +445,27 @@ body {
     background: #dc2626;
 }
 
+.btn-pink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #c71585 0%, #a01060 100%);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+}
+
+.btn-pink:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
 /* ========================================
    MEMBERS SECTION
    ======================================== */
