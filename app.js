@@ -1443,6 +1443,77 @@ function generateSomPDFForSchedule(month, year) {
 }
 
 // ========================================
+// AI SOM SCHEDULER
+// ========================================
+
+function generateAISomSchedule() {
+    const month = parseInt(document.getElementById('som-month-select').value);
+    const year = parseInt(document.getElementById('som-year-select').value);
+
+    const members = getMembers();
+    const somMembers = members.som || [];
+
+    if (somMembers.length < 1) {
+        alert('É necessário ter pelo menos 1 operador de som cadastrado para usar a IA.');
+        return;
+    }
+
+    if (!confirm('A IA vai preencher a escala automaticamente respeitando as disponibilidades. Os dados atuais do formulário serão substituídos. Deseja continuar?')) {
+        return;
+    }
+
+    showLoading('IA está montando a escala de som...');
+
+    setTimeout(() => {
+        try {
+            const services = getServiceDays(month, year);
+
+            // Usage counter for load balancing
+            const usageCount = {};
+            somMembers.forEach(m => { usageCount[m.id] = 0; });
+
+            services.forEach((service, index) => {
+                const serviceId = `som-${year}-${month}-${index}`;
+                const isWednesday = service.date.getDay() === 3;
+                const isSundayMorning = service.date.getDay() === 0 && service.type.includes('Manhã');
+                const isSundayNight = service.date.getDay() === 0 && !service.type.includes('Manhã');
+
+                // Filter available operators
+                const available = somMembers.filter(m => {
+                    if (!m.availability) return true;
+                    if (isWednesday && !m.availability.wednesday) return false;
+                    if (isSundayMorning && !m.availability.sunday_morning) return false;
+                    if (isSundayNight && !m.availability.sunday_night) return false;
+                    if (m.oncePerMonth && usageCount[m.id] >= 1) return false;
+                    return true;
+                });
+
+                if (available.length > 0) {
+                    // Shuffle and sort by usage (least used first)
+                    available.sort(() => Math.random() - 0.5);
+                    available.sort((a, b) => (usageCount[a.id] || 0) - (usageCount[b.id] || 0));
+
+                    const selected = available[0];
+                    usageCount[selected.id]++;
+
+                    const selectEl = document.getElementById(`som-operador-${serviceId}`);
+                    if (selectEl) {
+                        selectEl.value = selected.name;
+                    }
+                }
+            });
+
+            hideLoading();
+            alert('Escala de som preenchida com sucesso! Verifique os resultados e salve.');
+        } catch (error) {
+            console.error(error);
+            hideLoading();
+            alert('Erro ao gerar escala de som: ' + error.message);
+        }
+    }, 500);
+}
+
+// ========================================
 // BRIGADISTA SCHEDULE MANAGEMENT
 // ========================================
 
@@ -1916,6 +1987,7 @@ window.generateSomPDF = generateSomPDF;
 window.generateSomPDFForSchedule = generateSomPDFForSchedule;
 window.loadSavedSomSchedule = loadSavedSomSchedule;
 window.deleteSomSchedule = deleteSomSchedule;
+window.generateAISomSchedule = generateAISomSchedule;
 
 // Brigadista functions
 window.generateBrigadistaScheduleForm = generateBrigadistaScheduleForm;
