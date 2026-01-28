@@ -1103,6 +1103,8 @@ function generatePDFAuxiliares(month, year, schedule) {
 function updateDashboard() {
     const members = getMembers();
     const schedules = getSchedules();
+    const somSchedules = getSomSchedules();
+    const brigadistaSchedules = getBrigadistaSchedules();
 
     const porteirosEl = document.getElementById('total-porteiros');
     const auxiliaresEl = document.getElementById('total-auxiliares');
@@ -1114,7 +1116,10 @@ function updateDashboard() {
     if (auxiliaresEl) auxiliaresEl.textContent = members.auxiliares.length;
     if (somEl) somEl.textContent = (members.som || []).length;
     if (brigadistaEl) brigadistaEl.textContent = (members.brigadista_irmao || []).length + (members.brigadista_irma || []).length;
-    if (escalasEl) escalasEl.textContent = schedules.length;
+
+    // Total de escalas = Porteiros + Som + Brigadista
+    const totalEscalas = schedules.length + somSchedules.length + brigadistaSchedules.length;
+    if (escalasEl) escalasEl.textContent = totalEscalas;
 }
 
 function updateNextServices() {
