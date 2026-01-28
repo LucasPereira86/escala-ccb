@@ -179,7 +179,8 @@
                                     <option value="porteiro">Porteiro (Irmão)</option>
                                     <option value="auxiliar">Auxiliar da Porta (Irmã)</option>
                                     <option value="som">Operador de Som (Irmão)</option>
-                                    <option value="brigadista">Brigadista (Voluntário)</option>
+                                    <option value="brigadista_irmao">Brigadista (Irmão)</option>
+                                    <option value="brigadista_irma">Brigadista (Irmã)</option>
                                 </select>
                             </div>
                             <div class="form-group full-width">
@@ -249,11 +250,18 @@
                         <p class="empty-message" id="som-empty">Nenhum operador de som cadastrado</p>
                     </div>
                     <div class="members-card">
-                        <h3>🧯 Brigadistas (Voluntários)</h3>
-                        <ul class="members-list" id="brigadista-list">
+                        <h3>🧯👔 Brigadistas (Irmãos)</h3>
+                        <ul class="members-list" id="brigadista-irmao-list">
                             <!-- Populated by JS -->
                         </ul>
-                        <p class="empty-message" id="brigadista-empty">Nenhum brigadista cadastrado</p>
+                        <p class="empty-message" id="brigadista-irmao-empty">Nenhum brigadista (irmão) cadastrado</p>
+                    </div>
+                    <div class="members-card">
+                        <h3>🧯👗 Brigadistas (Irmãs)</h3>
+                        <ul class="members-list" id="brigadista-irma-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                        <p class="empty-message" id="brigadista-irma-empty">Nenhum brigadista (irmã) cadastrado</p>
                     </div>
                 </div>
             </section>
@@ -471,6 +479,9 @@
                         <div class="schedule-header">
                             <h3 id="brigadista-schedule-title">Escala de Brigadistas - Janeiro 2025</h3>
                             <div class="schedule-actions">
+                                <button class="btn-ai" onclick="generateAIBrigadistaSchedule()">
+                                    <span>✨</span> Preencher com IA
+                                </button>
                                 <button class="btn-secondary" onclick="saveBrigadistaSchedule()">
                                     <span>💾</span> Salvar
                                 </button>
@@ -486,7 +497,8 @@
                                     <tr>
                                         <th>Data</th>
                                         <th>Culto</th>
-                                        <th>Brigadista</th>
+                                        <th>Brigadista (Irmão)</th>
+                                        <th>Brigadista (Irmã)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="brigadista-schedule-body">
