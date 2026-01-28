@@ -25,6 +25,8 @@ const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 // Cache for data
 let membersCache = { porteiros: [], auxiliares: [], som: [], brigadista_irmao: [], brigadista_irma: [] };
 let schedulesCache = [];
+let somSchedulesCache = [];
+let brigadistaSchedulesCache = [];
 
 // ========================================
 // LOGIN HANDLERS
@@ -1169,8 +1171,6 @@ function updateNextServices() {
 // SOM SCHEDULE MANAGEMENT
 // ========================================
 
-let somSchedulesCache = [];
-
 function getSomSchedules() {
     return somSchedulesCache;
 }
@@ -1590,8 +1590,6 @@ function generateAISomSchedule() {
 // ========================================
 // BRIGADISTA SCHEDULE MANAGEMENT
 // ========================================
-
-let brigadistaSchedulesCache = [];
 
 function getBrigadistaSchedules() {
     return brigadistaSchedulesCache;
