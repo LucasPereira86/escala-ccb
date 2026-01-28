@@ -760,8 +760,19 @@ function generatePDFForSchedule(month, year) {
         return;
     }
 
+    // Gerar os dois PDFs separados
+    generatePDFPorteiros(month, year, schedule);
+
+    // Pequeno delay para evitar problemas de popup blocker
+    setTimeout(() => {
+        generatePDFAuxiliares(month, year, schedule);
+    }, 500);
+}
+
+// PDF para IRMÃOS (Porteiros)
+function generatePDFPorteiros(month, year, schedule) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape', 'mm', 'a4');
+    const doc = new jsPDF('portrait', 'mm', 'a4');
 
     // Separar serviços: Domingo Manhã vs outros cultos
     const morningServices = schedule.services.filter(s => s.type.includes('Manhã'));
@@ -769,34 +780,32 @@ function generatePDFForSchedule(month, year) {
 
     // Header
     doc.setFillColor(30, 64, 175);
-    doc.rect(0, 0, 297, 30, 'F');
+    doc.rect(0, 0, 210, 30, 'F');
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Congregação Cristã no Brasil', 148.5, 12, { align: 'center' });
+    doc.text('Congregação Cristã no Brasil', 105, 12, { align: 'center' });
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${CHURCH_INFO.city} - ${CHURCH_INFO.neighborhood}`, 148.5, 20, { align: 'center' });
+    doc.text(`${CHURCH_INFO.city} - ${CHURCH_INFO.neighborhood}`, 105, 20, { align: 'center' });
 
     doc.setFontSize(10);
-    doc.text(`Escala de Porteiros e Auxiliares da Porta - ${MONTH_NAMES[month]} ${year}`, 148.5, 27, { align: 'center' });
+    doc.text(`Escala dos Irmãos (Porteiros) - ${MONTH_NAMES[month]} ${year}`, 105, 27, { align: 'center' });
 
-    let currentY = 35;
+    let currentY = 40;
 
-    // =====================================================
-    // TABELA 1: IRMÃOS (Porteiros) - Cultos Regulares
-    // =====================================================
+    // TABELA 1: Cultos Regulares (Quarta e Domingo Noite)
     if (regularServices.length > 0) {
         doc.setTextColor(30, 64, 175);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('ESCALA DOS IRMAOS (Porteiros)', 15, currentY);
+        doc.text('CULTOS REGULARES (Quarta e Domingo Noite)', 15, currentY);
         currentY += 5;
 
-        const irmãosHeaders = [['Data', 'Culto', 'Porteiro Principal', 'Porteiro Lateral']];
-        const irmãosData = regularServices.map(service => [
+        const headers = [['Data', 'Culto', 'Porteiro Principal', 'Porteiro Lateral']];
+        const data = regularServices.map(service => [
             service.date,
             service.type,
             service.porteiroPrincipal || '-',
@@ -805,8 +814,8 @@ function generatePDFForSchedule(month, year) {
 
         doc.autoTable({
             startY: currentY,
-            head: irmãosHeaders,
-            body: irmãosData,
+            head: headers,
+            body: data,
             theme: 'grid',
             headStyles: {
                 fillColor: [30, 64, 175],
@@ -820,82 +829,27 @@ function generatePDFForSchedule(month, year) {
                 halign: 'center'
             },
             columnStyles: {
-                0: { cellWidth: 45 },
+                0: { cellWidth: 40 },
                 1: { cellWidth: 55 },
-                2: { cellWidth: 60 },
-                3: { cellWidth: 60 }
+                2: { cellWidth: 47 },
+                3: { cellWidth: 47 }
             },
-            margin: { left: 15, right: 15 }
+            margin: { left: 10, right: 10 }
         });
 
-        currentY = doc.lastAutoTable.finalY + 12;
+        currentY = doc.lastAutoTable.finalY + 15;
     }
 
-    // =====================================================
-    // TABELA 2: IRMÃS (Auxiliares da Porta) - Cultos Regulares
-    // =====================================================
-    if (regularServices.length > 0) {
-        doc.setTextColor(199, 21, 133); // Rosa escuro
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ESCALA DAS IRMAS (Auxiliares da Porta)', 15, currentY);
-        currentY += 5;
-
-        const irmãsHeaders = [['Data', 'Culto', 'Auxiliar Principal', 'Auxiliar Lateral']];
-        const irmãsData = regularServices.map(service => [
-            service.date,
-            service.type,
-            service.auxiliarPrincipal || '-',
-            service.auxiliarLateral || '-'
-        ]);
-
-        doc.autoTable({
-            startY: currentY,
-            head: irmãsHeaders,
-            body: irmãsData,
-            theme: 'grid',
-            headStyles: {
-                fillColor: [199, 21, 133], // Rosa escuro
-                textColor: [255, 255, 255],
-                fontStyle: 'bold',
-                halign: 'center',
-                fontSize: 9
-            },
-            bodyStyles: {
-                fontSize: 9,
-                halign: 'center',
-                fillColor: [255, 240, 245] // Rosa bem claro
-            },
-            columnStyles: {
-                0: { cellWidth: 45 },
-                1: { cellWidth: 55 },
-                2: { cellWidth: 60 },
-                3: { cellWidth: 60 }
-            },
-            margin: { left: 15, right: 15 }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 12;
-    }
-
-    // =====================================================
-    // TABELA 3: DOMINGO MANHÃ - IRMÃOS (Porteiros)
-    // =====================================================
+    // TABELA 2: Domingo Manhã
     if (morningServices.length > 0) {
-        // Verificar se precisa de nova página
-        if (currentY > 160) {
-            doc.addPage();
-            currentY = 20;
-        }
-
-        doc.setTextColor(30, 64, 175); // Azul
+        doc.setTextColor(30, 64, 175);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('DOMINGO MANHA - IRMAOS (Porteiros)', 15, currentY);
+        doc.text('DOMINGO MANHA (Jovens/Criancas)', 15, currentY);
         currentY += 5;
 
-        const morningIrmaosHeaders = [['Data', 'Porteiro Principal', 'Porteiro Lateral']];
-        const morningIrmaosData = morningServices.map(service => [
+        const morningHeaders = [['Data', 'Porteiro Principal', 'Porteiro Lateral']];
+        const morningData = morningServices.map(service => [
             service.date,
             service.porteiroPrincipal || '-',
             service.porteiroLateral || '-'
@@ -903,8 +857,8 @@ function generatePDFForSchedule(month, year) {
 
         doc.autoTable({
             startY: currentY,
-            head: morningIrmaosHeaders,
-            body: morningIrmaosData,
+            head: morningHeaders,
+            body: morningData,
             theme: 'grid',
             headStyles: {
                 fillColor: [30, 64, 175],
@@ -918,71 +872,13 @@ function generatePDFForSchedule(month, year) {
                 halign: 'center'
             },
             columnStyles: {
-                0: { cellWidth: 55 },
+                0: { cellWidth: 50 },
                 1: { cellWidth: 70 },
                 2: { cellWidth: 70 }
             },
-            margin: { left: 15, right: 15 }
+            margin: { left: 10, right: 10 }
         });
-
-        currentY = doc.lastAutoTable.finalY + 12;
     }
-
-    // =====================================================
-    // TABELA 4: DOMINGO MANHÃ - IRMÃS (Auxiliares)
-    // =====================================================
-    if (morningServices.length > 0) {
-        // Verificar se precisa de nova página
-        if (currentY > 160) {
-            doc.addPage();
-            currentY = 20;
-        }
-
-        doc.setTextColor(199, 21, 133); // Rosa escuro
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DOMINGO MANHA - IRMAS (Auxiliares da Porta)', 15, currentY);
-        currentY += 5;
-
-        const morningIrmasHeaders = [['Data', 'Auxiliar Principal', 'Auxiliar Lateral']];
-        const morningIrmasData = morningServices.map(service => [
-            service.date,
-            service.auxiliarPrincipal || '-',
-            service.auxiliarLateral || '-'
-        ]);
-
-        doc.autoTable({
-            startY: currentY,
-            head: morningIrmasHeaders,
-            body: morningIrmasData,
-            theme: 'grid',
-            headStyles: {
-                fillColor: [199, 21, 133], // Rosa escuro
-                textColor: [255, 255, 255],
-                fontStyle: 'bold',
-                halign: 'center',
-                fontSize: 9
-            },
-            bodyStyles: {
-                fontSize: 9,
-                halign: 'center',
-                fillColor: [255, 240, 245] // Rosa bem claro
-            },
-            columnStyles: {
-                0: { cellWidth: 55 },
-                1: { cellWidth: 70 },
-                2: { cellWidth: 70 }
-            },
-            margin: { left: 15, right: 15 }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 12;
-    }
-
-    // =====================================================
-    // TABELA 5: SOM - CULTOS NOTURNOS (Quarta e Domingo Noite)
-    // =====================================================
-
 
     // Footer
     const pageHeight = doc.internal.pageSize.height;
@@ -990,25 +886,20 @@ function generatePDFForSchedule(month, year) {
     doc.setFontSize(8);
     doc.text(
         `Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
-        148.5,
+        105,
         pageHeight - 10,
         { align: 'center' }
     );
 
-    // Save with proper blob download to ensure .pdf extension
-    const fileName = `Escala_CCB_${MONTH_NAMES[month]}_${year}.pdf`;
+    // Save
+    const fileName = `Escala_Porteiros_${MONTH_NAMES[month]}_${year}.pdf`;
 
-    // Try multiple methods for download
     try {
-        // Method 1: For file:// protocol, open in new window with save dialog
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
-
-        // Create a new window with the PDF
         const newWindow = window.open(pdfUrl, '_blank');
 
         if (!newWindow) {
-            // Popup blocked, try alternative download
             const link = document.createElement('a');
             link.href = pdfUrl;
             link.download = fileName;
@@ -1018,11 +909,157 @@ function generatePDFForSchedule(month, year) {
             document.body.removeChild(link);
         }
 
-        // Cleanup URL after delay
         setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
-
     } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
+        console.error('Erro ao gerar PDF de Porteiros:', error);
+    }
+}
+
+// PDF para IRMÃS (Auxiliares da Porta)
+function generatePDFAuxiliares(month, year, schedule) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait', 'mm', 'a4');
+
+    // Separar serviços: Domingo Manhã vs outros cultos
+    const morningServices = schedule.services.filter(s => s.type.includes('Manhã'));
+    const regularServices = schedule.services.filter(s => !s.type.includes('Manhã'));
+
+    // Header
+    doc.setFillColor(199, 21, 133);
+    doc.rect(0, 0, 210, 30, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Congregação Cristã no Brasil', 105, 12, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${CHURCH_INFO.city} - ${CHURCH_INFO.neighborhood}`, 105, 20, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.text(`Escala das Irmãs (Auxiliares da Porta) - ${MONTH_NAMES[month]} ${year}`, 105, 27, { align: 'center' });
+
+    let currentY = 40;
+
+    // TABELA 1: Cultos Regulares (Quarta e Domingo Noite)
+    if (regularServices.length > 0) {
+        doc.setTextColor(199, 21, 133);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CULTOS REGULARES (Quarta e Domingo Noite)', 15, currentY);
+        currentY += 5;
+
+        const headers = [['Data', 'Culto', 'Auxiliar Principal', 'Auxiliar Lateral']];
+        const data = regularServices.map(service => [
+            service.date,
+            service.type,
+            service.auxiliarPrincipal || '-',
+            service.auxiliarLateral || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: headers,
+            body: data,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [199, 21, 133],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center',
+                fillColor: [255, 240, 245]
+            },
+            columnStyles: {
+                0: { cellWidth: 40 },
+                1: { cellWidth: 55 },
+                2: { cellWidth: 47 },
+                3: { cellWidth: 47 }
+            },
+            margin: { left: 10, right: 10 }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 15;
+    }
+
+    // TABELA 2: Domingo Manhã
+    if (morningServices.length > 0) {
+        doc.setTextColor(199, 21, 133);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DOMINGO MANHA (Jovens/Criancas)', 15, currentY);
+        currentY += 5;
+
+        const morningHeaders = [['Data', 'Auxiliar Principal', 'Auxiliar Lateral']];
+        const morningData = morningServices.map(service => [
+            service.date,
+            service.auxiliarPrincipal || '-',
+            service.auxiliarLateral || '-'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: morningHeaders,
+            body: morningData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [199, 21, 133],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                halign: 'center',
+                fillColor: [255, 240, 245]
+            },
+            columnStyles: {
+                0: { cellWidth: 50 },
+                1: { cellWidth: 70 },
+                2: { cellWidth: 70 }
+            },
+            margin: { left: 10, right: 10 }
+        });
+    }
+
+    // Footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text(
+        `Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+        105,
+        pageHeight - 10,
+        { align: 'center' }
+    );
+
+    // Save
+    const fileName = `Escala_Auxiliares_${MONTH_NAMES[month]}_${year}.pdf`;
+
+    try {
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const newWindow = window.open(pdfUrl, '_blank');
+
+        if (!newWindow) {
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
+    } catch (error) {
+        console.error('Erro ao gerar PDF de Auxiliares:', error);
     }
 }
 
